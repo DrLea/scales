@@ -19,22 +19,20 @@ initializeApp({
 const db = getDatabase();
 initAuth(db);
 
-if (!localStorage.user) { auth.hidden=false; throw ""; }
-auth.hidden=true; app.hidden=false;
+if (!localStorage.user) {
+  auth.hidden = false;
+  throw "";
+}
+auth.hidden = true;
+app.hidden = false;
 
 let currentScale = null;
 let weights = {};
 let placements = {};
 
-onValue(ref(db,"weights"), s => {
-  weights = s.val() || {};
-  render();
-});
-
-onValue(ref(db,"placements"), s => {
-  placements = s.val() || {};
-  render();
-});
+/* LISTENERS */
+onValue(ref(db,"weights"), s => { weights = s.val() || {}; render(); });
+onValue(ref(db,"placements"), s => { placements = s.val() || {}; render(); });
 
 onValue(ref(db,"scales"), s => {
   scaleSelect.innerHTML="";
@@ -59,48 +57,74 @@ leftLabel.onblur=()=>update(ref(db,"scales/"+currentScale),{leftLabel:leftLabel.
 rightLabel.onblur=()=>update(ref(db,"scales/"+currentScale),{rightLabel:rightLabel.value});
 
 newScaleBtn.onclick=()=>push(ref(db,"scales"),{
-  name:prompt("Name"),
+  name:prompt("Scale name"),
   owner:localStorage.user,
   leftLabel:"Left",
   rightLabel:"Right"
 });
 
 addWeightBtn.onclick=()=>push(ref(db,"weights"),{
-  name:prompt("Name"),
+  name:prompt("Weight name"),
   value:+prompt("Value")
 });
 
+/* RENDER */
 function render(){
-  tray.innerHTML=leftPan.innerHTML=rightPan.innerHTML="";
-  let L=0,R=0;
+  tray.innerHTML="";
+  leftPan.innerHTML='<div class="sum" id="leftSum">0</div>';
+  rightPan.innerHTML='<div class="sum" id="rightSum">0</div>';
+
+  let L=0, R=0;
 
   for(const id in weights){
-    const li=document.createElement("li");
-    li.textContent=`${weights[id].name} (${weights[id].value})`;
-    li.draggable=true;
-    li.ondragstart=e=>e.dataTransfer.setData("id",id);
+    const w=weights[id];
+    const el=document.createElement("div");
+    el.className="weight";
+    el.textContent=`${w.name} (${w.value})`;
+    el.draggable=true;
+    el.ondragstart=e=>e.dataTransfer.setData("id",id);
 
     const side=placements[currentScale]?.[id];
-    if(side==="left"){ L+=weights[id].value; leftPan.appendChild(li); }
-    else if(side==="right"){ R+=weights[id].value; rightPan.appendChild(li); }
-    else tray.appendChild(li);
+    if(side==="left"){ L+=w.value; leftPan.appendChild(el); }
+    else if(side==="right"){ R+=w.value; rightPan.appendChild(el); }
+    else tray.appendChild(el);
   }
 
+  leftSum.textContent=L;
+  rightSum.textContent=R;
+
+  const diff=L-R;
   beam.style.transform=
-    `translateX(-50%) rotate(${Math.max(-12,Math.min(12,L-R))}deg)`;
+    `translateX(-50%) rotate(${Math.max(-12,Math.min(12,diff))}deg)`;
+
+  winner.textContent =
+    diff===0 ? "Balanced" :
+    diff>0 ? `${leftLabel.value} wins` :
+             `${rightLabel.value} wins`;
 }
 
-[leftPan,rightPan,tray,trash].forEach(el=>{
+/* DROP ZONES */
+[leftPan,rightPan,tray,trash,duplicate].forEach(el=>{
   el.ondragover=e=>e.preventDefault();
   el.ondrop=e=>{
     const id=e.dataTransfer.getData("id");
+
     if(el===trash){
       remove(ref(db,"weights/"+id));
       remove(ref(db,"placements/"+currentScale+"/"+id));
-    } else {
-      update(ref(db,"placements/"+currentScale),{
-        [id]: el===leftPan?"left":el===rightPan?"right":null
-      });
+      return;
     }
+
+    if(el===duplicate){
+      const w=weights[id];
+      push(ref(db,"weights"),{ name:w.name, value:w.value });
+      return;
+    }
+
+    update(ref(db,"placements/"+currentScale),{
+      [id]:
+        el===leftPan ? "left" :
+        el===rightPan ? "right" : null
+    });
   };
 });
