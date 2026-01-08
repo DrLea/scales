@@ -1,8 +1,5 @@
-import {
-  ref,
-  get,
-  set
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { ref, get, set } from
+  "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 async function hash(text) {
   const buf = await crypto.subtle.digest(
@@ -25,27 +22,26 @@ export function setupAuth(db) {
     if (snap.val().password !== await hash(pass.value))
       return alert("Wrong password");
 
-    localStorage.user = nick.value;
+    localStorage.setItem("user", nick.value);
     location.reload();
   };
 
   document.getElementById("registerBtn").onclick = async () => {
     const userRef = ref(db, "users/" + nick.value);
-
     if ((await get(userRef)).exists())
-      return alert("User already exists");
+      return alert("User exists");
 
     await set(userRef, {
       password: await hash(pass.value),
       createdAt: Date.now()
     });
 
-    localStorage.user = nick.value;
+    localStorage.setItem("user", nick.value);
     location.reload();
   };
 
   document.getElementById("logoutBtn").onclick = () => {
-    localStorage.clear();
+    localStorage.removeItem("user");
     location.reload();
   };
 }

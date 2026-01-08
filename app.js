@@ -1,11 +1,9 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { initializeApp } from
+  "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
-  getDatabase,
-  ref,
-  push,
-  onValue,
-  update
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+  getDatabase, ref, push, onValue, update
+} from
+  "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 import { setupAuth } from "./auth.js";
 
@@ -18,24 +16,22 @@ const firebaseConfig = {
   appId: "1:504039906176:web:ee9c90441a272de64e3f65"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+initializeApp(firebaseConfig);
+const db = getDatabase();
 
-/* ---------- AUTH ---------- */
-const user = localStorage.user;
+const user = localStorage.getItem("user");
 if (!user) {
-  document.getElementById("auth").hidden = false;
-  document.getElementById("app").hidden = true;
+  auth.hidden = false;
+  app.hidden = true;
   setupAuth(db);
-  throw new Error("Not logged in");
+  throw "";
 }
 
-document.getElementById("auth").hidden = true;
-document.getElementById("app").hidden = false;
+auth.hidden = true;
+app.hidden = false;
 
-/* ---------- SCALES ---------- */
+/* SCALES */
 let currentScale = null;
-
 const scalesRef = ref(db, "scales");
 const weightsRef = ref(db, "weights");
 
@@ -43,42 +39,36 @@ onValue(scalesRef, snap => {
   scaleSelect.innerHTML = "";
   snap.forEach(s => {
     if (s.val().owner !== user) return;
-    const opt = document.createElement("option");
-    opt.value = s.key;
-    opt.textContent = s.val().name;
-    scaleSelect.appendChild(opt);
+    const o = document.createElement("option");
+    o.value = s.key;
+    o.textContent = s.val().name;
+    scaleSelect.appendChild(o);
   });
   currentScale ||= scaleSelect.value;
 });
 
-scaleSelect.onchange = () => currentScale = scaleSelect.value;
-
-document.getElementById("newScaleBtn").onclick = () => {
+newScaleBtn.onclick = () => {
   const name = prompt("Scale name");
   if (!name) return;
-
-  push(scalesRef, {
-    name,
-    owner: user
-  });
+  push(scalesRef, { name, owner: user });
 };
 
-/* ---------- WEIGHTS ---------- */
-document.getElementById("addWeightBtn").onclick = () => {
-  if (!currentScale) return alert("Create a scale first");
+scaleSelect.onchange = () => currentScale = scaleSelect.value;
 
+/* WEIGHTS */
+addWeightBtn.onclick = () => {
   push(weightsRef, {
     scale: currentScale,
     name: wName.value,
-    value: Number(wValue.value),
-    side: "left"
+    value: +wValue.value,
+    side: "tray"
   });
 };
 
 onValue(weightsRef, snap => render(snap));
 
 function render(snap) {
-  leftList.innerHTML = rightList.innerHTML = "";
+  leftList.innerHTML = rightList.innerHTML = tray.innerHTML = "";
   let L = 0, R = 0;
 
   snap.forEach(w => {
@@ -92,27 +82,38 @@ function render(snap) {
     if (w.val().side === "left") {
       L += w.val().value;
       leftList.appendChild(li);
-    } else {
+    } else if (w.val().side === "right") {
       R += w.val().value;
       rightList.appendChild(li);
+    } else {
+      tray.appendChild(li);
     }
   });
 
-  leftSum.textContent = "Sum: " + L;
-  rightSum.textContent = "Sum: " + R;
+  leftSum.textContent = L;
+  rightSum.textContent = R;
 
-  scale.className = "scale " + (L > R ? "left" : R > L ? "right" : "");
+  const diff = L - R;
+  const MAX_TILT = 12;
+  const slope = Math.max(-MAX_TILT,
+    Math.min(MAX_TILT, diff));
+
+  beam.style.transform =
+    `translateX(-50%) rotate(${slope}deg)`;
+
   decision.textContent =
-    L === R ? "Balanced" :
-    `Decision leans ${L > R ? "LEFT" : "RIGHT"} (${Math.abs(L - R)})`;
+    diff === 0 ? "Balanced" :
+    `Leans ${diff > 0 ? "LEFT" : "RIGHT"} (${Math.abs(diff)})`;
 }
 
-/* ---------- DRAG & DROP ---------- */
-[leftPan, rightPan].forEach((pan, i) => {
-  pan.ondragover = e => e.preventDefault();
-  pan.ondrop = e => {
-    update(ref(db, "weights/" + e.dataTransfer.getData("id")), {
-      side: i === 0 ? "left" : "right"
-    });
+/* DRAG TARGETS */
+[leftPan, rightPan, tray].forEach((el, i) => {
+  el.ondragover = e => e.preventDefault();
+  el.ondrop = e => {
+    const side =
+      el === leftPan ? "left" :
+      el === rightPan ? "right" : "tray";
+
+    update(ref(db, "weights/" + e.dataTransfer.getData("id")), { side });
   };
 });
