@@ -1,6 +1,7 @@
 import { ref, get, set } from
   "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+  
 async function hash(t) {
   const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t));
   return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");

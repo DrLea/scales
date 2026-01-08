@@ -7,6 +7,7 @@ import {
 
 import { initAuth } from "./auth.js";
 
+
 initializeApp({
   apiKey: "AIzaSyD17d36hUtlzfNXbcKCJ_cay-crcC382W8",
   authDomain: "scales-e4215.firebaseapp.com",
@@ -94,8 +95,8 @@ function render(){
   rightSum.textContent=R;
 
   const diff=L-R;
-  beam.style.transform=
-    `translateX(-50%) rotate(${Math.max(-12,Math.min(12,diff))}deg)`;
+  beam.style.transform =
+  `translateX(-50%) rotate(${Math.max(-12, Math.min(12, -diff))}deg)`;
 
   winner.textContent =
     diff===0 ? "Balanced" :
