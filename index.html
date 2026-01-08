@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Balance Scales</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="auth">
+  <h2>Login / Register</h2>
+  <input id="nick" placeholder="nickname" />
+  <input id="pass" type="password" />
+  <br><br>
+  <button id="loginBtn">Login</button>
+  <button id="registerBtn">Register</button>
+</div>
+
+<div id="app" hidden>
+  <div class="top">
+    <select id="scaleSelect"></select>
+    <button id="newScaleBtn">➕ New scale</button>
+    <button id="logoutBtn">Logout</button>
+  </div>
+
+  <!-- SCALE -->
+  <div class="scale-wrapper">
+    <div class="pillar"></div>
+
+    <div id="beam" class="beam">
+      <div class="pan" id="leftPan">
+        <ul id="leftList"></ul>
+        <span id="leftSum"></span>
+      </div>
+
+      <div class="pan" id="rightPan">
+        <ul id="rightList"></ul>
+        <span id="rightSum"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEIGHTS TRAY -->
+  <h3>Weights</h3>
+  <div class="controls">
+    <input id="wName" placeholder="name" />
+    <input id="wValue" type="number" placeholder="value" />
+    <button id="addWeightBtn">Add</button>
+  </div>
+
+  <ul id="tray"></ul>
+
+  <p id="decision"></p>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
